@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>每日一图</title>
+    <link rel="stylesheet" href="/static/one.css">
+    <link rel="stylesheet" href="/static/pure-min.css">
+</head>
+<body>
+{% for one in ones %}
+    <div class="one-div-connect">
+        <div class="one-div-titulo">
+            <P>{{one['titulo']}}</P>
+        </div>
+        <div class="one-div-image">
+            <img class="one-image" src={{one['image']}}
+        </div>
+        <div class="one-div-leyenda">
+            <P>{{one['leyenda']}}</P>
+        </div>
+        <div class="one-div-title">
+            <div class="one-div-cita">
+                <P>{{one['cita']}}</P>
+            </div>
+            <div class="one-div-pubdate">
+                <P>{{one['pubdate']}}</P>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+<div class="one-buttons">
+    <a class="one-button-previous pure-button-primary pure-button" href="{{ url_for('.previous_ones_view', id=ones[0]['titulo'])}}">上一页</a>
+    <a class="one-button-next pure-button-primary pure-button" href="{{ url_for('.next_ones_view', id=ones[-1]['titulo'])}}">下一页</a>
+</div>
+
+</body>
+</html>
