@@ -23,12 +23,15 @@ def ones_view():
 
 @main.route('/ones/<id>')
 def previous_ones_view(id):
+    i = coll.find_one({'titulo': id})
     id = coll.find_one({'titulo':id})['_id']
     c = coll.find({"_id": {"$gt": id}}).count()
-    if c < 6:
-        c = 6
-    count = c - 6
-    ones = list(coll.find({"_id": {"$gt": id}}).sort("_id", -1).skip(count).limit(6))
+    if c < 1:
+        ones = list(coll.find({"_id": {"$lt": id}}).sort("_id", -1).limit(5))
+        ones.insert(0,i)
+    else:
+        count = c - 6
+        ones = list(coll.find({"_id": {"$gt": id}}).sort("_id", -1).skip(count).limit(6))
     return render_template('ones.html', ones=ones)
 
 @main.route('/one/<id>')

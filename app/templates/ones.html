@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="/static/css/pure-min.css">
 </head>
 <body>
-{% for one in ones %}
+    <div class="one-div-nav">
+        <img src="http://image.wufazhuce.com/www-fp-logo.png">
+    </div>
+    {% for one in ones %}
     <div class="one-div-connect">
         <div class="one-div-titulo">
             <P>{{one['titulo']}}</P>
@@ -27,11 +30,11 @@
             </div>
         </div>
     </div>
-{% endfor %}
-<div class="one-buttons">
-    <a class="one-button-previous pure-button-primary pure-button" href="{{ url_for('.previous_ones_view', id=ones[0]['titulo'])}}">上一页</a>
-    <a class="one-button-next pure-button-primary pure-button" href="{{ url_for('.next_ones_view', id=ones[-1]['titulo'])}}">下一页</a>
-</div>
+    {% endfor %}
+    <div class="one-buttons">
+        <a class="one-button-previous pure-button-primary pure-button" href="{{ url_for('.previous_ones_view', id=ones[0]['titulo'])}}">上一页</a>
+        <a class="one-button-next pure-button-primary pure-button" href="{{ url_for('.next_ones_view', id=ones[-1]['titulo'])}}">下一页</a>
+    </div>
 
 </body>
 </html>
