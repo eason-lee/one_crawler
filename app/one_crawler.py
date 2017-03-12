@@ -1,29 +1,39 @@
 # -*- coding: utf-8 -*-
 
-import requests
-from lxml import html
 import socket
 import ssl
+from datetime import datetime
+
+from apscheduler.schedulers.blocking import BlockingScheduler
+
+import requests
+from lxml import html
+from pymongo import MongoClient
+
 
 class Model(object):
+
     def __repr__(self):
         class_name = self.__class__.__name__
-        properties = ('{0} = ({1})'.format(k, v) for k, v in self.__dict__.items())
+        properties = ('{0} = ({1})'.format(k, v)
+                      for k, v in self.__dict__.items())
         return '\n<{0}:\n  {1}\n>'.format(self.titulo, '\n  '.join(properties))
 
 
 class One(Model):
+
     def __init__(self):
         super(One, self).__init__()
         self.image = ''
         self.leyenda = ''
-        self.cita= ''
+        self.cita = ''
         self.pubdate = 0
         self.titulo = 0
 
     def json(self):
         d = {k: v for k, v in self.__dict__.items()}
         return d
+
 
 def parsed_url(url):
     """
@@ -77,6 +87,7 @@ def socket_by_protocol(protocol):
         s = ssl.wrap_socket(socket.socket())
     return s
 
+
 def response_by_socket(s):
     """
     参数是一个 socket 实例
@@ -109,6 +120,7 @@ def parsed_response(r):
         headers[k] = v
     return status_code, headers, body
 
+
 def get(url):
     """
     用 GET 请求 url 并返回响应
@@ -116,7 +128,8 @@ def get(url):
     protocol, host, port, path = parsed_url(url)
     s = socket_by_protocol(protocol)
     s.connect((host, port))
-    request = 'GET {} HTTP/1.1\r\nhost: {}\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\nConnection: close\r\n\r\n'.format(path, host)
+    request = 'GET {} HTTP/1.1\r\nhost: {}\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\nConnection: close\r\n\r\n'.format(
+        path, host)
     encoding = 'utf-8'
     s.send(request.encode(encoding))
     response = response_by_socket(s)
@@ -131,10 +144,11 @@ def get(url):
 def one_from_div(div):
     one = One()
     one.image = div.xpath('.//div[@class="one-imagen"]//@src')[0]
-    one.leyenda = div.xpath('.//div[@class="one-imagen-leyenda"]')[0].text.strip()
+    one.leyenda = div.xpath(
+        './/div[@class="one-imagen-leyenda"]')[0].text.strip()
     one.cita = div.xpath('.//div[@class="one-cita"]')[0].text.strip()
     one.pubdate = div.xpath('.//div[@class="one-pubdate"]//p')[0].text \
-                    + ' ' + div.xpath('.//div[@class="one-pubdate"]//p')[1].text
+        + ' ' + div.xpath('.//div[@class="one-pubdate"]//p')[1].text
     one.titulo = div.xpath('.//div[@class="one-titulo"]')[0].text.strip()
     return one
 
@@ -150,21 +164,21 @@ def ones_from_url(url):
         ones = one_from_div(div)
     return ones
 
-def get_url(start,end):
+
+def get_url(start, end):
     if start < 14:
         start = 14
     n = (n for n in range(start, end))
     url = ('http://wufazhuce.com/one/{}'.format(i) for i in n)
     return url
 
-def get_ones():
-    urls = get_url(240,1484)
+
+def get_ones(start, end):
+    urls = get_url(start, end)
     for url in urls:
         ones = ones_from_url(url)
         yield ones
 
-
-from pymongo import MongoClient
 
 def db_init():
     client = MongoClient()
@@ -175,13 +189,28 @@ def db_init():
 coll = db_init()
 
 
-
-def run():
-    ones = get_ones()
+def run(start=None, end=None):
+    url = coll.find_one({'url': 'url'})
+    if start is None:
+        start = int(url['start_url'])
+    if end is None:
+        end = int(url['end_url'])
+    ones = get_ones(start, end)
+    start, end = end, end + 1
     for one in ones:
         one = one.json()
         coll.insert_one(one)
-        print "现在是",one
+        print "现在是", one
+    new_url = {
+            'url': 'url',
+            'start_url': start,
+            'end_url': end,
+        }
+    
+    coll.update(url, new_url)
+
 
 if __name__ == '__main__':
-    run()
+    scheduler = BlockingScheduler()
+    scheduler.add_job(run, 'cron', day_of_week='0-6', hour=5, minute=30)
+    scheduler.start()
